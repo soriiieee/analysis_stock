@@ -44,7 +44,7 @@ stock list
 https://towardsdatascience.com/how-to-get-stock-data-using-python-c0de1df17e75
 """
 # - subroutine
-def clensing(df,NATION):
+def clensing_yf(df,NATION):
   if NATION=="JP":
     # print("debug 21.09.03")
     df["diff_max"] = df["high"] - df["low"]
@@ -52,12 +52,13 @@ def clensing(df,NATION):
 
     # print(df.head())
     # sys.exit()
-    use_col = ["time","close","diff_max","diff_day","volume"]
+    use_col = ["time","open","close","high","low","diff_max","diff_day","volume"] #2021.09.11
     df = df[use_col]
-    df.columns =["time","close","diff_max","diff_day","volume"]
+    # df.columns =["time","close","diff_max","diff_day","volume"]
     df["log_diff"] = np.log(df["close"]).diff()
     df = df.round(4)
     return df
+
   if NATION=="US":
     df = df.reset_index()
     df["diff_max"] = df["High"] - df["Low"]
@@ -71,8 +72,9 @@ def clensing(df,NATION):
     return df
 
 def get(ticker = 'MSFT',NATION="US"):
-  path = f"../tmp/{NATION}_{ticker}.csv"
-  if not os.path.exists(path):
+  # path = f"../tmp/{NATION}_{ticker}.csv"
+  # if not os.path.exists(path):
+  if 1:
     """tmpの中にファイルがない場合は取得する"""
 
     print("Not Founded Now get! ..")
@@ -83,7 +85,8 @@ def get(ticker = 'MSFT',NATION="US"):
       # tickerDf = data.history(period='1d', start='2010-1-1', end='2020-1-25')
       df = data.history(period='1d', start='2015-1-1')
       # print(df.tail())
-      df = clensing(df,"US")
+      df = clensing_yf(df,"US")
+      return df
     
     if NATION=="JP":
       # ticker = "7203"
@@ -93,6 +96,10 @@ def get(ticker = 'MSFT',NATION="US"):
       """
       if not ".T" in ticker:
         ticker = f"{ticker}.T"
+      
+      # print(datetime.now(), "[DEBUG]")
+      # print(ticker)
+      # sys.exit()
       myshare = share.Share(ticker)
 
       try:
@@ -107,9 +114,10 @@ def get(ticker = 'MSFT',NATION="US"):
         df = pd.DataFrame(dat)
         df["time"] = pd.to_datetime(df["timestamp"],unit="ms")
         # print(df.head())
-      df = clensing(df,"JP")
-    df.to_csv(path, index=False)
-    return df
+      df = clensing_yf(df,"JP")
+    # df.to_csv(path, index=False)
+      return df
+
   else:
     if check_dt(path) == 0:
       print("already getted ..check dt==0")
@@ -221,6 +229,7 @@ def main():
   for ticker,name in zip(_ticker,_name):
     # df = pre_porocess(ticker = str(ticker),NATION="JP", isNORM=True)
     # print(df.head())
+    pass
     # sys.exit()
   return
 
@@ -239,15 +248,51 @@ def clean_csv():
   subprocess.run(f"rm -f {TMP}/*.csv",shell=True)
   return
 
+def load_japan():
+  path = "../dat/fundamental/names/data_j2.csv"
+  return pd.read_csv(path)
+
+def code2name(ticker=1301):
+  """
+  2021.09.11 
+  日本株専用　tickerをnameに変換する 
+  """
+  df = load_japan()
+  _code = df["code"].values.tolist()
+  df = df[["code","name"]]
+  df_dict = df.set_index("code").to_dict()["name"]
+  if ticker in _code:
+    return df_dict[ticker]
+  else:
+    return "NO-NAME"
+
+def isFloat(x):
+  try:
+    v = float(x)
+  except:
+    v = np.nan
+  return v
+
+def clensing(df,_col):
+  for c in _col:
+    df[c] = df[c].apply(lambda x: isFloat(x))
+  return df
+
+
+
 if __name__ == "__main__":
   if 0:
     compare()
   
-  if 1:
+  if 0:
     clean_csv()
-  if 1:
+  if 0:
     # plot_10com()
     main()
     # check_dt()
+  
+  if 1:
+    name = code2name()
+    # print(name)
 
 

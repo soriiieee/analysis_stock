@@ -2,6 +2,7 @@
 """
 log
 init updates  2021.09.07 update - info mations
+init updates  2021.09.11 update - info mations
 参考：
 https://irbank.net/download
 からcsvデータを取得して、決算情報等を更新して学習するときに便利なようにするprogram
@@ -22,7 +23,7 @@ import numpy as np
 from scipy.integrate._ivp.radau import P
 # from scipy.integrate._ivp.radau import P
 from sklearn.preprocessing import MinMaxScaler
-
+import time
 
 #jisaku
 # from config import Com
@@ -39,6 +40,8 @@ from yahoo_finance_api2.exceptions import YahooFinanceError
 import subprocess
 import glob
 import xlrd
+
+from utils_001_stock import code2name,clensing, get
 
 HOME="/Users/soriiieee/work2/stock"
 FUND_DAT = "/Users/soriiieee/work2/stock/dat/fundamental/origin" # 保存先
@@ -122,6 +125,8 @@ def load_tbl():
   df = pd.read_csv(path2)
   return df
 
+
+
 def tbl_columns(sel_col = None):
   # 業界一覧を確認するようのprogramになる
   # date: 2021.09.07
@@ -144,42 +149,90 @@ def mk_gyoukai(col="name33",name="非鉄金属"):
   return df
 
 
-def mk_1y(_ticker):
+def mk_1y(_ticker, N=30):
   _list = sorted(glob.glob(f"{FUND_DAT}/fy*.csv"))
-  for ticker in _ticker:
-    # print(ticker)
-    # sys.exit()
-    for i,f in enumerate(_list):
-      df = pd.read_csv(f,skiprows=1)
-      df = df.reset_index()
-      # print(df.columns)
-      # sys.exit()
-      df= df[df["コード"]==ticker]
-      print(df.head())
-      sys.exit()
-      # df= df[df["コード"]==ticker]
-      df= df[ticker]
-      print(df.head())
-    sys.exit()
-    sys.exit()
-    return
+  if N:
+    # _ticker = _ticker[:N]
+    pass
+  #_make category list
+  _df=[]
 
-  return
+  all_col = ['総資産', '純資産', '株主資本', '利益剰余金', '短期借入金', '長期借入金', 'BPS', '自己資本比率','営業CF', '投資CF', '財務CF', '設備投資', '現金同等物', '営業CFマージン', '売上高','営業利益', '経常利益', '純利益', 'EPS', 'ROE', 'ROA','一株配当', '剰余金の配当','自社株買い', '配当性向', '総還元性向', '純資産配当率']
+  sub_col = ['純資産', '株主資本', '利益剰余金', '短期借入金', '長期借入金', 'BPS', '自己資本比率','営業CF', '投資CF', '財務CF', '売上高','営業利益', '経常利益', '純利益', 'EPS', 'ROE', 'ROA','一株配当', '剰余金の配当']
 
-def main():
+  for i,f in enumerate(_list):
+    df = pd.read_csv(f,skiprows=1)
+    if i>0:
+      df = df.drop("年度",axis=1)
+    df= df.loc[df["コード"].isin(_ticker),:]
+    df["コード"] = df["コード"].astype(int)
+    df = df.set_index("コード")
+    _df.append(df)
+  
+  df = pd.concat(_df,axis=1)
+  _name = [ code2name(x) for x in df.index ]
+  df["name"] = _name
+  df = clensing(df,_col = sub_col)
+  df = df.sort_values(['売上高','営業利益'],ascending=False)
+  df.index.name = "code"
+  df = df.reset_index()
+
+  if df.shape[0] > N:
+    df = df.iloc[:N,:]
+  else:
+    pass
+  return df
+
+def check_category(col):
+  "１７業種か、３３業種の業界を閲覧するようのプログラム"
+  tbl_columns(sel_col=col) # 業界選定
+  return 
+
+def top30_list(col="name33",name ="輸送用機器"):
   """
   main program
   date : 2021.09.07
   """
   if 0:
+    # tbl_columns(sel_col="name17") # 業界選定
     tbl_columns(sel_col="name33") # 業界選定
-
-  if 1:
-    col ,name  = "name33", "非鉄金属"
-    df = mk_gyoukai(col="name33",name="非鉄金属")
+    sys.exit()
+  
+  # 対象カテゴリ群の上位企業を抽出してみる
+  out_path = f"../out/top_com/{col}_{name}_top30.csv"
+  if not os.path.exists(out_path):
+    #-------------------
+    # 業界からそのticker listを引っ張ってくるような, sub-routine
+    df = mk_gyoukai(col=col,name=name)
     _ticker = df["code"].values.tolist()
-    
-    mk_1y(_ticker)
+    #-------------------
+    # 売上の上下でsortして表示するようなprogram
+    df = mk_1y(_ticker,N=30)
+    df.to_csv(out_path, index=False)
+  else:
+    print("alredy making ...")
+
+def top30_get(col,name):
+  path = f"../out/top_com/{col}_{name}_top30.csv"
+  if not os.path.exists(path):
+    print("making Top 30 list ...")
+    top30_list(col=col,name =name)
+  
+  df = pd.read_csv(path)
+  # データ格納用のdhirectorの生成を実施する
+  OUT_DIR=f"../out/ts1/{col}/{name}"
+  os.makedirs(OUT_DIR,exist_ok=True)
+
+  _code = df["code"].values.tolist()
+  _name = df["name"].values.tolist()
+  for i,(code,name) in enumerate(zip(_code,_name)):
+    df = get(ticker = str(code),NATION="JP")
+    df.to_csv(f"{OUT_DIR}/{code}_{name}.csv", index=False)
+    print(datetime.now(), "[END]", i,name)
+    time.sleep(1) #アクセス過多を防ぐための操作
+
+  
+
 
 
 
@@ -187,8 +240,17 @@ def main():
 
 if __name__ == "__main__":
 
-  if 0:
+  if 0: #年間に１回ほど、更新する企業の規模感fundamental データのダウンロードの実施作業
     update()
   
+  if 0: #業界別の企業一覧検索
+    check_category(col="name33")
+    sys.exit()
+  
   if 1:
-    main()
+    #業界別のtop企業一覧の作成(売上,営業利益率の上位３０社)
+    #-setting------
+    col ,name= "name33","化学"
+    # col ,name= "name33","輸送用機器"
+    #-dataSet Getting--
+    top30_get(col=col,name =name)
