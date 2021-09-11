@@ -20,3 +20,13 @@ $ ssh-copy-id -i ~/.ssh/id_rsa.pub git@github.com:soriiieee/analysis_stock.git:
 * 公開鍵のgit設定　-> https://qiita.com/shizuma/items/2b2f873a0034839e47ce
 * 接続確認　　`ssh -T git@github.com` -> OK 2021.09.08
 
+
+# 解析下準備
+`cd /Users/soriiieee/work2/stock/py` #カレントディレクトリへの移動
+`source stockenv/bin/activate` ＃解析の環境設定
+`python utils_002_update.py` #対象企業群の情報更新
+
+# EDA(データ可視化&探索progra)
+`cd ../jupyter`
+`jupyter notebook`
+
