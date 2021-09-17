@@ -76,8 +76,7 @@ def get(ticker = 'MSFT',NATION="US"):
   # if not os.path.exists(path):
   if 1:
     """tmpの中にファイルがない場合は取得する"""
-
-    print("Not Founded Now get! ..")
+    # print("Not Founded Now get! ..")
     if NATION=="US":
       #get data on this ticker
       data = yf.Ticker(ticker)

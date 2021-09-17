@@ -1,6 +1,6 @@
 
 LOCAL=$1
-
+[ ! -e $LOCAL ] && mkdir -p $LOCAL
 #------
 # date : 2021.09.07
 ## referene --> https://irbank.net/download
@@ -10,7 +10,6 @@ LOCAL=$1
 cd $LOCAL
 rm ./*.csv ./*.xls #init
 #年間データ
-
 
 
 URL="https://stockdatacenter.com/stockdata/companylist.csv"

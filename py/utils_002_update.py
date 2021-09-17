@@ -3,6 +3,7 @@
 log
 init updates  2021.09.07 update - info mations
 init updates  2021.09.11 update - info mations
+init updates  2021.09.17 update
 参考：
 https://irbank.net/download
 からcsvデータを取得して、決算情報等を更新して学習するときに便利なようにするprogram
@@ -41,14 +42,22 @@ import subprocess
 import glob
 import xlrd
 
-from utils_001_stock import code2name,clensing, get
+try:
+  from utils_001_stock import code2name,clensing, get
+except:
+  sys.path.append("..")
+  from py.utils_001_stock import code2name,clensing, get
 
-HOME="/Users/soriiieee/work2/stock"
-FUND_DAT = "/Users/soriiieee/work2/stock/dat/fundamental/origin" # 保存先
-NAME_DAT = "/Users/soriiieee/work2/stock/dat/fundamental/names"  # 保存先
-CONCAT_OUT="/Users/soriiieee/work2/stock/dat/fundamental/concat"
 
-
+# -　環境ごとに設定を変える　--#
+if os.path.exists("/Users/soriiieee/work2/stock"):
+  HOME="/Users/soriiieee/work2/stock"
+else:
+  HOME="/home/ysorimachi/work/sori_py2/analysis_stock"
+  
+FUND_DAT = f"{HOME}/dat/fundamental/origin" # 保存先
+NAME_DAT = f"{HOME}/dat/fundamental/names"  # 保存先
+CONCAT_OUT=f"{HOME}/dat/fundamental/concat"
 
 def update():
   """
@@ -61,9 +70,10 @@ def update():
   def xls2csv():
     # path = f"{NAME_DAT}/data_j.xls"
     path = f"{HOME}/tmp/EdinetcodeDlInfo.csv"
-
     subprocess.run("nkf -w --overwrite {}".format(path), shell=True)
     return
+  
+  
   def mk_namelist():
     path = f"{NAME_DAT}/data_j.csv"
     df= pd.read_csv(path)
@@ -214,6 +224,8 @@ def top30_list(col="name33",name ="輸送用機器"):
 
 def top30_get(col,name):
   path = f"../out/top_com/{col}_{name}_top30.csv"
+  os.makedirs(f"../out/top_com", exist_ok=True)
+  
   if not os.path.exists(path):
     print("making Top 30 list ...")
     top30_list(col=col,name =name)
@@ -230,12 +242,8 @@ def top30_get(col,name):
     df.to_csv(f"{OUT_DIR}/{code}_{name}.csv", index=False)
     print(datetime.now(), "[END]", i,name)
     time.sleep(1) #アクセス過多を防ぐための操作
-
-  
-
-
-
-
+  print("outfile is -->")
+  print(OUT_DIR)
 
 
 if __name__ == "__main__":
