@@ -222,7 +222,7 @@ def top30_list(col="name33",name ="輸送用機器"):
   else:
     print("alredy making ...")
 
-def top30_get(col,name):
+def top30_get(col,name, N=10):
   path = f"../out/top_com/{col}_{name}_top30.csv"
   os.makedirs(f"../out/top_com", exist_ok=True)
   
@@ -237,11 +237,17 @@ def top30_get(col,name):
 
   _code = df["code"].values.tolist()
   _name = df["name"].values.tolist()
+  
+  
+  if N:
+    _code=_code[:N]
+    _name=_name[:N]
+    
   for i,(code,name) in enumerate(zip(_code,_name)):
     df = get(ticker = str(code),NATION="JP")
     df.to_csv(f"{OUT_DIR}/{code}_{name}.csv", index=False)
     print(datetime.now(), "[END]", i,name)
-    time.sleep(1) #アクセス過多を防ぐための操作
+    time.sleep(0.2) #アクセス過多を防ぐための操作
   print("outfile is -->")
   print(OUT_DIR)
 
