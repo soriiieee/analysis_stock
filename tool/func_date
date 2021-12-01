@@ -1,0 +1,121 @@
+## 日時計算のコマンド
+dtinc(){
+## 日付の計算を行う
+# 引数：1日時
+#       2月年日時分のどれか
+#       3増減
+# 戻り値　：日付YmdHHMMSS
+#
+# すべて秒単位に直して、時刻を計算する
+  awk '{
+  yyyy=substr($1,1,4)
+  mm=substr($1,5,2)
+  dd=substr($1,7,2)
+  HH=substr($1,9,2)
+  MM=substr($1,11,2)
+  SS=substr($1,13,2)
+
+#  print($1,$2,$3)
+
+  inc=$3
+
+  if ($2==3){
+    ymdHMS=mktime(yyyy" "mm" "dd" "HH" "MM" "SS) + 60 * 60 * 24 * inc
+  }
+
+  ## 時間の単位
+  if ($2==4){
+    ymdHMS=mktime(yyyy" "mm" "dd" "HH" "MM" "SS) + 60*60*inc
+  }
+
+  ## 分の単位
+  if ($2==5){
+    ymdHMS=mktime(yyyy" "mm" "dd" "HH" "MM" "SS) + 60*inc
+  }
+
+  print strftime("%Y%m%d%H%M%S", ymdHMS)
+
+  }'
+}
+
+
+dtcomp(){
+## 日時差を計算する
+## echo 201612030000 20161201300000  3 | dtcomp
+  awk '{
+    yy1=substr($1,1,4)
+    mm1=substr($1,5,2)
+    dd1=substr($1,7,2)
+    HH1=substr($1,9,2)
+    MM1=substr($1,11,2)
+    SS1=substr($1,13,2)
+
+    yy2=substr($2,1,4)
+    mm2=substr($2,5,2)
+    dd2=substr($2,7,2)
+    HH2=substr($2,9,2)
+    MM2=substr($2,11,2)
+    SS2=substr($2,13,2)
+
+    ymdt1=mktime(yy1" "mm1" "dd1" "HH1" "MM1" "SS1)
+    ymdt2=mktime(yy2" "mm2" "dd2" "HH2" "MM2" "SS2)
+
+    ## 時間差(秒)を計算
+    dt=ymdt1 - ymdt2
+
+    if ($3 == 2) print "ERROR"         ## n月
+    if ($3 == 3) print dt/(60*60*24)   ## n日
+    if ($3 == 4) print dt/(60*60)      ## n時
+    if ($3 == 5) print dt/60           ## n分
+    if ($3 == 6) print dt              ## n秒
+
+  }'
+}
+
+
+mdate_time(){
+### 指定された時間間隔の日付列を作成する
+### 引数　　1:開始日時 2:終了日時 3:時間間隔 4:刻み幅
+### 戻り値　日付YmdHHMMSS
+##  echo "20160101000000 20170102000000 5 30 " | mdate_time
+  awk '{
+    yyyy1=substr($1,1,4) ; mm1=substr($1,5,2)   ; dd1=substr($1,7,2)
+    HH1=substr($1,9,2)   ; MM1=substr($1,11,2)  ; SS1=substr($1,13,2)
+    ymdt1=mktime(yyyy1" "mm1" "dd1" "HH1" "MM1" "SS1)
+
+    yyyy2=substr($2,1,4) ; mm2=substr($2,5,2)   ; dd2=substr($2,7,2)
+    HH2=substr($2,9,2)   ; MM2=substr($2,11,2)  ;   SS2=substr($2,13,2)
+    ymdt2=mktime(yyyy2" "mm2" "dd2" "HH2" "MM2" "SS2)
+
+#    print yyyy1" "mm1" "dd1" "HH1" "MM1" "SS1
+#    print yyyy2" "mm2" "dd2" "HH2" "MM2" "SS2
+    ## 時間差detta_secの計算 戻り値：X秒
+    delta_sec=int( ymdt2-ymdt1 )
+
+
+   ## 日きざみ
+   if($3==3) {
+          dt=delta_sec/(60*60*24)
+          for (i=0;i<=dt;i=i+$4){
+            ymdHMS=mktime(yyyy1" "mm1" "dd1" "HH1" "MM1" "SS1) + (60*60*24)*i
+            print strftime("%Y%m%d%H%M%S", ymdHMS)
+          }
+    }
+    ## 分刻み
+    else if($3==4) {
+          dt=delta_sec/(60*60)
+          for (i=0;i<=dt;i=i+$4){
+            ymdHMS=mktime(yyyy1" "mm1" "dd1" "HH1" "MM1" "SS1) + 60*60*i
+            print strftime("%Y%m%d%H%M%S", ymdHMS)
+          }
+    }
+    else if($3==5) {
+          dt=delta_sec/60
+          for (i=0;i<=dt;i=i+$4){
+            ymdHMS=mktime(yyyy1" "mm1" "dd1" "HH1" "MM1" "SS1) + 60*i
+            print strftime("%Y%m%d%H%M%S", ymdHMS)
+          }
+    }
+  }'
+}
+
