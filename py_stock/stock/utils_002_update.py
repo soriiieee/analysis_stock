@@ -59,7 +59,7 @@ FUND_DAT = f"{HOME}/dat/fundamental/origin" # 保存先
 NAME_DAT = f"{HOME}/dat/fundamental/names"  # 保存先
 CONCAT_OUT=f"{HOME}/dat/fundamental/concat"
 
-def fundamental(yy="2020"):
+def update():
   """
   init : 2021.09.07
   main : fundamental 情報の取得
@@ -88,13 +88,34 @@ def fundamental(yy="2020"):
     df.columns = rename_col
     df = df[use_col2]
 
+  # 市場・商品区分 ['市場第一部（内国株）' 'ETF・ETN' 'JASDAQ(スタンダード・内国株）' 'JASDAQ(グロース・内国株）'
+  # 'マザーズ（内国株）' 'PRO Market' '市場第二部（内国株）' '市場第一部（外国株）'
+  # 'REIT・ベンチャーファンド・カントリーファンド・インフラファンド' 'JASDAQ(スタンダード・外国株）' 'マザーズ（外国株）'
+  # '出資証券' '市場第二部（外国株）'] 13
+  # 33業種コード ['50' '-' '6050' '2050' '3500' '1050' '9050' '3600' '3550' '5250' '3050'
+  # '3250' '8050' '5050' '7200' '6100' '3800' '3100' '3650' '3400' '7100'
+  # '3700' '3300' '3200' '3150' '3750' '3350' '3450' '7050' '7150' '5200'
+  # '5100' '5150' '4050'] 34
+  # 33業種区分 ['水産・農林業' '-' '卸売業' '建設業' '非鉄金属' '鉱業' 'サービス業' '機械' '金属製品' '情報・通信業' '食料品'
+  # '医薬品' '不動産業' '陸運業' 'その他金融業' '小売業' 'その他製品' '繊維製品' '電気機器' 'ガラス・土石製品'
+  # '証券、商品先物取引業' '輸送用機器' '石油・石炭製品' '化学' 'パルプ・紙' '精密機器' 'ゴム製品' '鉄鋼' '銀行業'
+  # '保険業' '倉庫・運輸関連業' '海運業' '空運業' '電気・ガス業'] 34
+  # 17業種コード ['1' '-' '13' '3' '7' '2' '10' '8' '5' '17' '12' '16' '14' '4' '9' '6'
+  # '15' '11'] 18
+  # 17業種区分 ['食品 ' '-' '商社・卸売 ' '建設・資材 ' '鉄鋼・非鉄 ' 'エネルギー資源 ' '情報通信・サービスその他 ' '機械 '
+  # '医薬品 ' '不動産 ' '運輸・物流 ' '金融（除く銀行） ' '小売 ' '素材・化学 ' '電機・精密 ' '自動車・輸送機 '
+  # '銀行 ' '電力・ガス '] 18
+  # 規模コード ['7' '-' '4' '6' '2' '1'] 6
+  # 規模区分 ['TOPIX Small 2' '-' 'TOPIX Mid400' 'TOPIX Small 1' 'TOPIX Large70'
+  # 'TOPIX Core30'] 6
+    # print(df.head())
     path2 = f"{NAME_DAT}/data_j2.csv"
     df.to_csv(path2, index=False)
     return
   # ------------------------------
   # main
-  if 1: # fundamental csv ...
-    subprocess.run("sh get_funda.sh {} {}".format(FUND_DAT,yy), shell=True)
+  if 0: # fundamental csv ...
+    subprocess.run("sh get_funda.sh {}".format(FUND_DAT), shell=True)
   if 0: # name(ticker)  & ETF list
     ##あまりうまくいかなかった
     # subprocess.run("sh get_tickers.sh {}".format(NAME_DAT), shell=True)
@@ -108,55 +129,41 @@ def fundamental(yy="2020"):
     mk_namelist()
   return 
 
-def master_fundamental():
-  """
-  2021.11.09 sorimachi setting ---
-  """
-  _yy = sorted(os.listdir(FUND_DAT))
-  df = load_tbl()
-  # print(df.shape) #(4131, 6)
-  # print(df.head())
-  # print(check_cate("name17"))
-  _ticker = df["code"].astype(int).values.tolist()
-  for yy in _yy:
-    mk_1y(_ticker,yy=yy,save=True)
-    print(datetime.now(),"[end]", yy)
-  return 
 
 def load_tbl():
-  """2021.11.14 update(空白文字の削除)"""
   path2 = f"{NAME_DAT}/data_j2.csv"
   df = pd.read_csv(path2)
-  for c in ['name', 'market', 'name33', 'name17', 'num_size']:
-    df[c] = df[c].apply(lambda x: x.replace(" ","").replace(" ",""))
   return df
 
 
 
-def check_cate(cate = None):
+def tbl_columns(sel_col = None):
   # 業界一覧を確認するようのprogramになる
   # date: 2021.09.07
-  # date: 2021.11.14
-  if cate is None:
-    sys.exit("['market', 'name33', 'name17', 'num_size']")
-  
   df = load_tbl()
+  if sel_col:
+    use_col=[sel_col]
+  else:
+    use_col =['market', 'name33', 'name17', 'num_size']
 
-  _uniq = df[cate].unique()
-  _n=[]
-  for u in _uniq:
-    tmp = df[df[cate]==u]
-    n_tmp = tmp.shape[0]
-    _n.append(n_tmp)
+  for c in use_col:
+    print("-"*15,c,"-"*40)
+    print(df[c].unique())
+    print("-"*15)
+    print(df[c].value_counts())
+    # sys.exit()
 
-  print("-"*15,cate,"-"*15)
-  _list = [ f"{u}({n})" for u,n in zip(_uniq,_n)]
-  print(_list)
-  return 
+def mk_gyoukai(col="name33",name="非鉄金属"):
+  df = load_tbl()
+  df = df[df[col]==name]
+  return df
 
-def mk_1y(_ticker,yy="2021",save=True):
-  _list = sorted(glob.glob(f"{FUND_DAT}/{yy}/fy*.csv"))
 
+def mk_1y(_ticker, N=30):
+  _list = sorted(glob.glob(f"{FUND_DAT}/fy*.csv"))
+  if N:
+    # _ticker = _ticker[:N]
+    pass
   #_make category list
   _df=[]
 
@@ -175,78 +182,89 @@ def mk_1y(_ticker,yy="2021",save=True):
   df = pd.concat(_df,axis=1)
   _name = [ code2name(x) for x in df.index ]
   df["name"] = _name
-  # df = clensing(df,_col = sub_col)
-  df = clensing(df,_col = all_col)
+  df = clensing(df,_col = sub_col)
+  df = df.sort_values(['売上高','営業利益'],ascending=False)
   df.index.name = "code"
   df = df.reset_index()
-  df = df.sort_values('code',ascending=True)
 
-  if save:
-    df.to_csv(f"{FUND_DAT}/master/funda_set_{yy}.csv", index=False)
+  if df.shape[0] > N:
+    df = df.iloc[:N,:]
+  else:
+    pass
   return df
 
+def check_category(col):
+  "１７業種か、３３業種の業界を閲覧するようのプログラム"
+  tbl_columns(sel_col=col) # 業界選定
+  return 
 
-def mk_list(col="name33",name ="輸送用機器"):
+def top30_list(col="name33",name ="輸送用機器"):
   """
   main program
   date : 2021.09.07
   """
-  def mk_gyoukai(col="name33",name="非鉄金属"):
-    
-    df = load_tbl()
-    df = df[df[col]==name]
-    return df
-
+  if 0:
+    # tbl_columns(sel_col="name17") # 業界選定
+    tbl_columns(sel_col="name33") # 業界選定
+    sys.exit()
+  
+  # 対象カテゴリ群の上位企業を抽出してみる
+  out_path = f"../out/top_com/{col}_{name}_top30.csv"
+  if not os.path.exists(out_path):
+    #-------------------
     # 業界からそのticker listを引っ張ってくるような, sub-routine
-  df = mk_gyoukai(col=col,name=name)
-  _ticker = df["code"].values.tolist()
-  #-------------------
-  # 売上の上下でsortして表示するようなprogram
-  df = mk_1y(_ticker,yy="2021")
-  return df
+    df = mk_gyoukai(col=col,name=name)
+    _ticker = df["code"].values.tolist()
+    #-------------------
+    # 売上の上下でsortして表示するようなprogram
+    df = mk_1y(_ticker,N=30)
+    df.to_csv(out_path, index=False)
+  else:
+    print("alredy making ...")
 
-def check_com(col,name, n=10, download=True):
-  """
-  2021.11.14 data downloads Japan data
-  """
-
-  df = mk_list(col=col,name =name)
-
-  if df.shape[0] ==0:
-    sys.exit("DataFrame Is None! please re-input col & name !")
-
+def top30_get(col,name, N=10):
+  path = f"../out/top_com/{col}_{name}_top30.csv"
+  os.makedirs(f"../out/top_com", exist_ok=True)
+  
+  if not os.path.exists(path):
+    print("making Top 30 list ...")
+    top30_list(col=col,name =name)
+  
+  df = pd.read_csv(path)
   # データ格納用のdhirectorの生成を実施する
-  OUT_DIR=f"/Users/soriiieee/work2/stock/out/ts1/{col}/{name}"
+  OUT_DIR=f"../out/ts1/{col}/{name}"
   os.makedirs(OUT_DIR,exist_ok=True)
 
   _code = df["code"].values.tolist()
   _name = df["name"].values.tolist()
   
-  if n:
-    _code=_code[:n]
-    _name=_name[:n]
   
-  if download:
-    for i,(code,name) in enumerate(zip(_code,_name)):
-      df = get(ticker = str(code),NATION="JP")
-      df.to_csv(f"{OUT_DIR}/{code}_{name}.csv", index=False)
-      print(datetime.now(), "[END]", i,name)
-      time.sleep(0.2) #アクセス過多を防ぐための操作
+  if N:
+    _code=_code[:N]
+    _name=_name[:N]
+    
+  for i,(code,name) in enumerate(zip(_code,_name)):
+    df = get(ticker = str(code),NATION="JP")
+    df.to_csv(f"{OUT_DIR}/{code}_{name}.csv", index=False)
+    print(datetime.now(), "[END]", i,name)
+    time.sleep(0.2) #アクセス過多を防ぐための操作
   print("outfile is -->")
   print(OUT_DIR)
 
 
 if __name__ == "__main__":
 
-  if 1: #年間に１回ほど、更新する企業の規模感fundamental データのダウンロードの実施作業
-    # for yy in ["2018","2017"]:
-    #   fundamental(yy=yy)
-      # sys.exit()
-    master_fundamental()
+  if 0: #年間に１回ほど、更新する企業の規模感fundamental データのダウンロードの実施作業
+    update()
   
   if 0: #業界別の企業一覧検索
-    check_cate(cate="name17") #['market', 'name33', 'name17', 'num_size']
-    # sys.exit()
-    
-    col ,name= "name17","商社・卸売 "
-    check_com(col=col,name =name,n=20)
+    check_category(col="name33")
+    sys.exit()
+  
+  if 1:
+    #業界別のtop企業一覧の作成(売上,営業利益率の上位３０社) #毎日更新するイメージ
+    #-setting------
+    col ,name= "name33","化学"
+    # col ,name= "name33","輸送用機器"
+    #-dataSet Getting--
+    top30_get(col=col,name =name)
