@@ -216,15 +216,15 @@ def check_com(col,name, n=10, download=True):
     sys.exit("DataFrame Is None! please re-input col & name !")
 
   # データ格納用のdhirectorの生成を実施する
-  OUT_DIR=f"../out/ts1/{col}/{name}"
+  OUT_DIR=f"/Users/soriiieee/work2/stock/out/ts1/{col}/{name}"
   os.makedirs(OUT_DIR,exist_ok=True)
 
   _code = df["code"].values.tolist()
   _name = df["name"].values.tolist()
   
   if n:
-    _code=_code[:N]
-    _name=_name[:N]
+    _code=_code[:n]
+    _name=_name[:n]
   
   if download:
     for i,(code,name) in enumerate(zip(_code,_name)):
